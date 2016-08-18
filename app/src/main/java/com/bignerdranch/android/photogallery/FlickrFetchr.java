@@ -54,13 +54,28 @@ public class FlickrFetchr {
         return new String(getUrlBytes(urlSpec));
     }
 
+    public byte[] fetchThumbnail(String urlSpec) throws IOException {
+        String url = Uri.parse(HOST_PROXY).buildUpon()
+                .appendPath("photos")
+                .appendPath("fetchUrl")
+                .appendQueryParameter("uri", urlSpec)
+                .build().toString();
+
+        return getUrlBytes(url);
+    }
+
     public List<GalleryItem> fetchItems() {
+        return fetchItems(0);
+    }
+
+    public List<GalleryItem> fetchItems(int page) {
         List<GalleryItem> items = new ArrayList<>();
 
         try {
             String url = Uri.parse(HOST_PROXY).buildUpon()
                     .appendPath("photos")
                     .appendPath("getRecent")
+                    .appendPath("" + page)
                     .build().toString();
 
             String jsonString = getUrlString(url);
