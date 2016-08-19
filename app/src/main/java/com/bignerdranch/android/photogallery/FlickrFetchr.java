@@ -25,6 +25,15 @@ public class FlickrFetchr {
     // 暂时,PhotoGallery 这个练手项目只支持模拟器中运行,为了方便访问flickr,开发机本地做了socks5 代理
     private static final String HOST_PROXY = "http://10.0.2.2:3000/proxy";
 
+    private static final String PHOTOS_CATEGORY = "photos";
+    private static final String PHOTOS_SEARCH_METHOD = "search";
+    private static final String PHOTOS_RECENT_METHOD = "getRecent";
+
+    private static final Uri PHOTOS_ENDPOINT =
+            Uri.parse(HOST_PROXY)
+            .buildUpon()
+            .appendPath(PHOTOS_CATEGORY).build();
+
     public byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
 
@@ -64,20 +73,10 @@ public class FlickrFetchr {
         return getUrlBytes(url);
     }
 
-    public List<GalleryItem> fetchItems() {
-        return fetchItems(0);
-    }
-
-    public List<GalleryItem> fetchItems(int page) {
+    private List<GalleryItem> downloadGalleryItems(String url) {
         List<GalleryItem> items = new ArrayList<>();
 
         try {
-            String url = Uri.parse(HOST_PROXY).buildUpon()
-                    .appendPath("photos")
-                    .appendPath("getRecent")
-                    .appendPath("" + page)
-                    .build().toString();
-
             String jsonString = getUrlString(url);
             Log.e(TAG, "Received JSON: " + jsonString);
 
@@ -89,6 +88,24 @@ public class FlickrFetchr {
         }
 
         return items;
+    }
+
+    private String buildUrl(String method, String query) {
+        Uri.Builder builder = PHOTOS_ENDPOINT.buildUpon().appendPath(method);
+
+        if (method.equals(PHOTOS_SEARCH_METHOD)) {
+            builder.appendQueryParameter("text", query);
+        }
+
+        return builder.build().toString();
+    }
+
+    public List<GalleryItem> fetchRecentPhotos() {
+        return downloadGalleryItems(buildUrl(PHOTOS_RECENT_METHOD, null));
+    }
+
+    public List<GalleryItem> searchPhotos(String query) {
+        return downloadGalleryItems(buildUrl(PHOTOS_SEARCH_METHOD, query));
     }
 
     private void parseItems(List<GalleryItem> items, JSONObject jsonBody) throws JSONException {
