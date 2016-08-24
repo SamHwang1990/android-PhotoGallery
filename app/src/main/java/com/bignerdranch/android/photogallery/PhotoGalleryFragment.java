@@ -133,6 +133,12 @@ public class PhotoGalleryFragment extends Fragment {
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mThumbnailDownloader.cleanQueue();
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_photo_gallery, menu);
@@ -175,6 +181,7 @@ public class PhotoGalleryFragment extends Fragment {
 
     private void setupAdapter() {
         if (isAdded()) {
+            mThumbnailDownloader.cleanQueue();
             mRecyclerView.setAdapter(new PhotoAdapter(mGalleryItems));
         }
     }
