@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.support.v4.util.LruCache;
 import android.util.Log;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ThumbnailDownloader<T> extends HandlerThread {
     private static final String TAG = "ThumbnailDownloader";
     private static final int MESSAGE_DOWNLOAD = 0;
+    private static final int CACHE_SIZE = 30;
 
     private Boolean mHasQuit = false;
     private Handler mRequestHandler;
@@ -24,6 +26,8 @@ public class ThumbnailDownloader<T> extends HandlerThread {
 
     private Handler mResponseHandler;
     private ThumbnailDownloadListener<T> mThumbnailDownloadListener;
+
+    private LruCache<String, Bitmap> mLruCache;
 
     public interface ThumbnailDownloadListener<T> {
         void onThumbnailDownloaded(T target, Bitmap bitmap);
@@ -36,6 +40,7 @@ public class ThumbnailDownloader<T> extends HandlerThread {
     public ThumbnailDownloader(Handler responseHandler) {
         super(TAG);
         mResponseHandler = responseHandler;
+        mLruCache = new LruCache<>(CACHE_SIZE);
     }
 
     @Override
@@ -77,11 +82,20 @@ public class ThumbnailDownloader<T> extends HandlerThread {
     private void handleRequest(final T target) {
         try {
             final String url = mRequestMap.get(target);
+            Bitmap tempCache;
 
             if (url == null) return;
 
-            byte[] bitmapBytes = new FlickrFetchr().fetchThumbnail(url);
-            final Bitmap bitmap = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+            tempCache = mLruCache.get(url);
+
+            if (tempCache == null) {
+                byte[] bitmapBytes = new FlickrFetchr().fetchThumbnail(url);
+                tempCache = BitmapFactory.decodeByteArray(bitmapBytes, 0, bitmapBytes.length);
+                mLruCache.put(url, tempCache);
+            }
+
+            final Bitmap bitmap = tempCache;
+
             Log.i(TAG, "Bitmap created");
             mResponseHandler.post(new Runnable() {
                 @Override
