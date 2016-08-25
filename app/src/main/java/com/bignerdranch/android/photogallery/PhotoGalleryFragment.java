@@ -95,6 +95,8 @@ public class PhotoGalleryFragment extends Fragment {
         setHasOptionsMenu(true);
         updateItems();
 
+        PollService.setServiceAlarm(getActivity(), true);
+
         Handler handler = new Handler();
 
         mThumbnailDownloader = new ThumbnailDownloader<>(handler);
@@ -160,6 +162,13 @@ public class PhotoGalleryFragment extends Fragment {
                 return false;
             }
         });
+
+        MenuItem togglePollingItem = menu.findItem(R.id.menu_item_toggle_polling);
+        if (PollService.isAlarmOn(getActivity())) {
+            togglePollingItem.setTitle(R.string.stop_polling);
+        } else {
+            togglePollingItem.setTitle(R.string.start_polling);
+        }
     }
 
     @Override
@@ -168,6 +177,10 @@ public class PhotoGalleryFragment extends Fragment {
             case R.id.menu_item_clear_search:
                 QueryPreferences.setStoredQuery(getActivity(), null);
                 updateItems();
+                return true;
+            case R.id.menu_item_toggle_polling:
+                PollService.setServiceAlarm(getActivity(), !PollService.isAlarmOn(getActivity()));
+                getActivity().invalidateOptionsMenu();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
