@@ -28,6 +28,7 @@ public class FlickrFetchr {
     private static final String PHOTOS_CATEGORY = "photos";
     private static final String PHOTOS_SEARCH_METHOD = "search";
     private static final String PHOTOS_RECENT_METHOD = "getRecent";
+    private static final String PHOTOS_DETAIL_METHOD = "fetchHtml";
 
     private static final Uri PHOTOS_ENDPOINT =
             Uri.parse(HOST_PROXY)
@@ -71,6 +72,14 @@ public class FlickrFetchr {
                 .build().toString();
 
         return getUrlBytes(url);
+    }
+
+    public Uri getDetailUrl(String owner, String id) {
+        Uri.Builder builder = PHOTOS_ENDPOINT.buildUpon().appendPath(PHOTOS_DETAIL_METHOD);
+        builder.appendQueryParameter("uid", owner);
+        builder.appendQueryParameter("id", id);
+
+        return builder.build();
     }
 
     private List<GalleryItem> downloadGalleryItems(String url) {
@@ -118,6 +127,7 @@ public class FlickrFetchr {
             GalleryItem item = new GalleryItem();
             item.setId(photoJsonObject.getString("id"));
             item.setCaption(photoJsonObject.getString("title"));
+            item.setOwner(photoJsonObject.getString("owner"));
 
             if (photoJsonObject.has("url_s")) {
                 item.setUrl(photoJsonObject.getString("url_s"));

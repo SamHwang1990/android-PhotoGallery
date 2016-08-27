@@ -1,5 +1,6 @@
 package com.bignerdranch.android.photogallery;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -8,7 +9,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Created by sam on 16/8/15.
  */
-public class PhotoGalleryFragment extends Fragment {
+public class PhotoGalleryFragment extends VisibleFragment {
 
     private static final String TAG = "PhotoGalleryFragment";
 
@@ -37,17 +37,29 @@ public class PhotoGalleryFragment extends Fragment {
     private ThumbnailDownloader<PhotoHolder> mThumbnailDownloader;
 
 
-    private class PhotoHolder extends RecyclerView.ViewHolder {
+    private class PhotoHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private ImageView mImageView;
+        private GalleryItem mGalleryItem;
 
         public PhotoHolder(View itemView) {
             super(itemView);
 
             mImageView = (ImageView) itemView.findViewById(R.id.fragment_photo_gallery_image_view);
+            itemView.setOnClickListener(this);
         }
 
         public void bindDrawable(Drawable drawable) {
             mImageView.setImageDrawable(drawable);
+        }
+
+        public void bindGalleryItem(GalleryItem item) {
+            mGalleryItem = item;
+        }
+
+        @Override
+        public void onClick(View view) {
+            Intent i = PhotoPageActivity.newIntent(getActivity(), new FlickrFetchr().getDetailUrl(mGalleryItem.getOwner(), mGalleryItem.getId()));
+            startActivity(i);
         }
     }
 
@@ -66,6 +78,7 @@ public class PhotoGalleryFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(PhotoHolder holder, int position) {
+            GalleryItem galleryItem = mGalleryItemList.get(position);
             Drawable placeholder;
 
             if (Build.VERSION.SDK_INT >= 21) {
@@ -75,7 +88,8 @@ public class PhotoGalleryFragment extends Fragment {
             }
 
             holder.bindDrawable(placeholder);
-            mThumbnailDownloader.queryThumbnail(holder, mGalleryItemList.get(position).getUrl());
+            holder.bindGalleryItem(galleryItem);
+            mThumbnailDownloader.queryThumbnail(holder, galleryItem.getUrl());
         }
 
         @Override
@@ -95,7 +109,7 @@ public class PhotoGalleryFragment extends Fragment {
         setHasOptionsMenu(true);
         updateItems();
 
-        PollService.setServiceAlarm(getActivity(), true);
+        PollService.setServiceAlarm(getActivity(), PollService.isAlarmOn(getActivity()));
 
         Handler handler = new Handler();
 
